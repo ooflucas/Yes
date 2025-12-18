@@ -1,23 +1,60 @@
 import random
 import sys
-pos = [' '] * 25
+left_counter = 1
+right_counter = 10
+column = 10
+row = 5
+pos = [' '] * column * row * 2
 steps = []
 mine_pos = []
-def print_board(row, column):
-    print(f'| {pos[0]} | {pos[1]} | {pos[2]} | {pos[3]} | {pos[4]} |')
-    print(f'---------------------')
-    print(f'| {pos[5]} | {pos[6]} | {pos[7]} | {pos[8]} | {pos[9]} |')
-    print(f'---------------------')
-    print(f'| {pos[10]} | {pos[11]} | {pos[12]} | {pos[13]} | {pos[14]} |')
-    print(f'---------------------')
-    print(f'| {pos[15]} | {pos[16]} | {pos[17]} | {pos[18]} | {pos[19]} |')
-    print(f'---------------------')
-    print(f'| {pos[20]} | {pos[21]} | {pos[22]} | {pos[23]} | {pos[24]} |')
-    print(f'---------------------')
+def print_board(column, row):
+    for i in range(column*row):
+        i = i+1
+        print('|', pos[i],'|', end = '')
+        if i % column == 0:
+            print('\n','-----'*column)
 def generate_mine():
     for mines in range(3,5):
         pos[mines] = '*'
         mine_pos.append(mines)
+def corners():
+    corner = []
+    global column
+    global row
+    corner.append(1)
+    corner.append(column)
+    corner.append(column*(row-1)+1)
+    corner.append(column*row)
+    print(corner)
+    return corner
+def sides():
+    side_list = []
+    left_side = []
+    right_side = []
+    bottom_side = []
+    top_side = []
+    global column
+    global row
+    corner = corners()
+    for top in range(column):
+        top += 1
+        if top in corner:
+            continue
+        top_side.append(top)
+    print(f"top = {top_side}")
+    for bottom in range(column*(row-1), column*row):
+        bottom += 1
+        if bottom in corner:
+            continue
+        bottom_side.append(bottom)
+    print(f"bottom = {bottom_side}")
+    for left in range(column):
+        left += 1
+        left += column
+        if left in corner:
+            continue
+        left_side.append(left)
+    print(f"left = {left_side}")
 def find_adjacent_cells(positions):
     offsets = [-5, 5, -1, 1, -6, -4, 4, 6]
     adjacent_list = []
@@ -33,6 +70,7 @@ def find_adjacent_cells(positions):
     adjacent_list = [upper, lower, left, right, upper_left, upper_right, lower_left, lower_right]
     return adjacent_list
 def step():
+    print('\n')
     position = input('enter a position to step on:   ')
     position = int(position)
     mine_adjacent = 0
@@ -49,5 +87,6 @@ def step():
     steps.append(position)
 generate_mine()
 while True:
-    print_board()
+    print_board(column, row)
+    sides()
     step()
