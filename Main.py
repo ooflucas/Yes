@@ -6,6 +6,7 @@ pos = [' '] * column * row * 2
 steps = []
 mine_pos = []
 flags = []
+moves = 0
 def print_board(column, row):
     for i in range(column*row):
         i = i+1
@@ -13,9 +14,12 @@ def print_board(column, row):
         if i % column == 0:
             print('\n','-----'*column)
 def generate_mine():
-    for mines in range(3,5):
-        pos[mines] = '*'
-        mine_pos.append(mines)
+    global row
+    global column
+    mines = random.sample(range(1, row*column), round(row*column*0.3))
+    for i in range(len(mines)):
+        pos[mines[i]] = '*'
+        mine_pos.append(mines[i])
 def corners():
     global column
     global row
@@ -136,25 +140,33 @@ def find_adjacent_cells(positions):
         upper_right = positions - column + 1
         lower_left = positions + column - 1
         lower_right = positions + column + 1
-        adjacent_list = [upper, lower, left, right, upper_left, ipper_right, lower_left, lower_right]
+        adjacent_list = [upper, lower, left, right, upper_left, upper_right, lower_left, lower_right]
         return adjacent_list
 def step():
     global column
     global row
     global flags
+    global moves
     print_board(column, row)
     while True:
         print('\n')
         position = input('enter a position:   ')
-        if position.isdigit():
+        if not int(position) in flags:
             break
         else:
-            print('enter a valid nuber!')
+            print("this position is flagged!")
     position = int(position)
-    action = input('flag or step?   ')
+    pos[position] = 'X'
+    print_board(column, row)
+    action = input('flag, enter or cancel?   ')
+    if action == 'cancel':
+        pos[position] = ' '
+        return
     if action == 'flag':
         pos[position] = '🚩'
-        flags = position
+        flags.append(position)
+        print(f'flags = {flags}')
+        return
     mine_adjacent = 0
     print(find_adjacent_cells(position))
     adjacent_list = find_adjacent_cells(position)
@@ -167,7 +179,7 @@ def step():
         sys.exit
         return
     steps.append(position)
+step()
 generate_mine()
 while True:
-    sides()
     step()
