@@ -18,7 +18,7 @@ def generate_mine():
     global column
     mines = random.sample(range(1, row*column), round(row*column*0.3))
     for i in range(len(mines)):
-        pos[mines[i]] = '*'
+        pos[mines[i]] = ' '
         mine_pos.append(mines[i])
 def corners():
     global column
@@ -175,11 +175,14 @@ def step():
             mine_adjacent += 1
     pos[position] = mine_adjacent
     if position in mine_pos:
+        print_board(column, row)
         print('you lost!')
-        sys.exit
+        sys.exit()
         return
     steps.append(position)
-step()
+print_board(column, row)
 generate_mine()
+print("welcome to the minesweeper!")
+print("while not evety time you firstly step on is safe")
 while True:
     step()
