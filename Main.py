@@ -7,6 +7,10 @@ steps = []
 mine_pos = []
 flags = []
 moves = 0
+yes = []
+for i in range(column*row):
+    i += 1
+    yes.append(i)
 def print_board(column, row):
     for i in range(column*row):
         i = i+1
@@ -20,6 +24,7 @@ def generate_mine():
     for i in range(len(mines)):
         pos[mines[i]] = ' '
         mine_pos.append(mines[i])
+    return mine_pos
 def corners():
     global column
     global row
@@ -174,6 +179,7 @@ def step():
         if adj_cell in mine_pos:
             mine_adjacent += 1
     pos[position] = mine_adjacent
+    moves += 1
     if position in mine_pos:
         print_board(column, row)
         print('you lost!')
@@ -181,8 +187,12 @@ def step():
         return
     steps.append(position)
 print_board(column, row)
-generate_mine()
+mine_pos = generate_mine()
+for i in range(len(mine_pos)):
+    yes.remove(mine_pos[i])
+print(len(yes))
 print("welcome to the minesweeper!")
 print("while not evety time you firstly step on is safe")
-while True:
+while moves <= len(yes):
     step()
+    print(len(yes))
