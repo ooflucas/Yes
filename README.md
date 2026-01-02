@@ -1,1 +1,1 @@
-minesweeper game (under development)
+minesweeper game
