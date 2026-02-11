@@ -62,3 +62,4 @@ for bus_eta in eta:
             print('Arriving\n')
         elif eta_delta < 0:
             print('Departed\n')
+
