@@ -2,61 +2,51 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import matplotlib.pyplot as plt
-
+import os
+os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'expandable_segments:True'
+torch.backends.cudnn.benchmark = True
 # ============================================
 # 1. CONVOLUTIONAL AUTOENCODER (Sharper!)
 # ============================================
 class ConvAutoencoder(nn.Module):
-    def __init__(self):
+    def __init__(self, latent_dim=20):
         super().__init__()
         self.encoder = nn.Sequential(
-            nn.Conv2d(1, 32, kernel_size=3, stride=2, padding=1),
+            nn.Conv2d(1, 32, 3, stride=2, padding=1), # 28 -> 14
+            nn.BatchNorm2d(32),
             nn.ReLU(),
-            nn.Conv2d(32, 64, kernel_size=3, stride=2, padding=1),
+            nn.Conv2d(32, 64, 3, stride=2, padding=1), # 14 -> 7
+            nn.BatchNorm2d(64),
             nn.ReLU(),
-            nn.Conv2d(64, 128, kernel_size=7, stride=1, padding=0),
+            nn.Conv2d(64, 128, 7, stride=1, padding=0), # 7 -> 1
             nn.ReLU()
         )
-        self.fc_mu = nn.Linear(128, 20)
-        self.fc_logvar = nn.Linear(128, 20)
-        self.fc_decode = nn.Linear(20, 128)
+        self.fc_mu = nn.Linear(128, latent_dim)
+        self.fc_logvar = nn.Linear(128, latent_dim)
+        self.fc_decode = nn.Linear(latent_dim, 128)
+        
         self.decoder = nn.Sequential(
-            nn.ConvTranspose2d(128, 64, kernel_size=7, stride=1, padding=0),
+            nn.ConvTranspose2d(128, 64, 7, stride=1, padding=0),
             nn.ReLU(),
-            # Layer 2: 7x7 → 14x14 (32 channels)
-            nn.ConvTranspose2d(64, 32, kernel_size=3, stride=2, padding=1, output_padding=1),
+            nn.ConvTranspose2d(64, 32, 3, stride=2, padding=1, output_padding=1),
             nn.ReLU(),
-            
-            # Layer 3: 14x14 → 28x28 (1 channel)
-            nn.ConvTranspose2d(32, 1, kernel_size=3, stride=2, padding=1, output_padding=1),
+            nn.ConvTranspose2d(32, 1, 3, stride=2, padding=1, output_padding=1),
             nn.Sigmoid()
         )
+
     def reparameterize(self, mu, logvar):
-        # 從 logvar (對數方差) 算出標準差 std
-        # 數學上：std = sqrt(exp(logvar)) = exp(0.5 * logvar)
         std = torch.exp(0.5 * logvar)
-        
-        # 產生一個跟 std 形狀一樣的隨機噪音 (從標準常態分佈 N(0,1) 抽樣)
         eps = torch.randn_like(std)
-        
-        # z = mu + std * eps
         return mu + eps * std
+
     def forward(self, x):
-        # Input: (batch, 784) → reshape to (batch, 1, 28, 28)
         x = x.view(-1, 1, 28, 28)
-        h = self.encoder(x)
-        h = h.view(-1, 128)
+        h = self.encoder(x).view(-1, 128)
         mu = self.fc_mu(h)
         logvar = self.fc_logvar(h)
         z = self.reparameterize(mu, logvar)
-        z_expanded = self.fc_decode(z)
-        z_reshaped = z_expanded.view(-1, 128, 1, 1)
-        # Decode
-        decoded = self.decoder(z_reshaped)  # Shape: (batch, 1, 28, 28)
-        
-        # Flatten back to (batch, 784)
-        return decoded.view(-1, 784), mu, logvar
-
+        z_reshaped = self.fc_decode(z).view(-1, 128, 1, 1)
+        return self.decoder(z_reshaped).view(-1, 784), mu, logvar
 # ============================================
 # 2. CREATE TRAINING DATA (SQUARES WITH NOISE)
 # ============================================
@@ -95,60 +85,44 @@ def vae_loss_fn(recon_x, x, mu, logvar, beta):
 # ============================================
 # 4. TRAINING FUNCTION
 # ============================================
-def train(model, device, epochs=3000, batch_size=64, noise_level=1.0):
-    optimizer = optim.Adam(model.parameters(), lr=0.0005)
-    scheduler = optim.lr_scheduler.ReduceLROnPlateau(
-        optimizer, 
-        mode='min',
-        patience=500,
-        factor=0.5
-    )
-    loss_history = []
+def train(model, device, epochs=5000, batch_size=128): # 3060Ti 轻松跑 128
+    optimizer = optim.AdamW(model.parameters(), lr=1e-3)
+    # 使用新版 AMP 缩放器
+    scaler = torch.amp.GradScaler('cuda') 
     
-    print(f"Training on: {device}")
-    print(f"Model: Convolutional Autoencoder")
-    print(f"Epochs: {epochs}, Batch size: {batch_size}")
-    print(f"Noise level: {noise_level}")
-    print("-" * 50)
-    
+    model.train()
+    print(f"🚀 Training on {torch.cuda.get_device_name(0)} (8GB VRAM)")
+
     for epoch in range(epochs):
-        # Create batch
-        inputs, targets = create_batch(batch_size, noise_level)
-        
-        # Move to GPU/CPU
-        inputs = inputs.to(device)
-        targets = targets.to(device)
-        
-        # Forward pass
-        output, mu, logvar = model(inputs)
-        loss = vae_loss_fn(output, targets, mu, logvar, beta=0.5)
-        # Backward pass
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
-        scheduler.step(loss)
-        
-        loss_history.append(loss.item())
-        
-        # Print progress
+        inputs, targets = create_batch(batch_size) # 假设你之前的 create_batch 函数还在
+        inputs, targets = inputs.to(device), targets.to(device)
+
+        optimizer.zero_grad(set_to_none=True)
+
+        # 正确的新版 Autocast 语法
+        with torch.amp.autocast('cuda'):
+            output, mu, logvar = model(inputs)
+            loss = vae_loss_fn(output, targets, mu, logvar, beta=0.5)
+
+        scaler.scale(loss).backward()
+        scaler.step(optimizer)
+        scaler.update()
+
         if epoch % 500 == 0:
-            current_lr = optimizer.param_groups[0]['lr']
-            print(f"Epoch {epoch:4d}, LR: {current_lr:.6f}, Loss: {loss.item():.6f}")
+            print(f"Epoch {epoch:5d} | Loss: {loss.item():.4f}")
     
     print("-" * 50)
     print("Training complete!")
-    print(f"Final loss: {loss_history[-1]:.6f}")
     
     # Plot loss curve
     plt.figure(figsize=(10, 5))
-    plt.plot(loss_history)
     plt.xlabel('Epoch')
     plt.ylabel('Loss')
     plt.title('Training Loss Over Time (Convolutional Autoencoder)')
     plt.grid(True)
     plt.show()
     
-    return loss_history
+    return
 
 
 # ============================================
@@ -226,7 +200,7 @@ if __name__ == "__main__":
     print("\n" + "="*50)
     print("TRAINING CONVOLUTIONAL AUTOENCODER")
     print("="*50)
-    train(model_conv, device, epochs=100000, batch_size=64, noise_level=1.0)
+    train(model_conv, device, epochs=1000, batch_size=8, noise_level=1.0)
     
     # Visualize results
     print("\n" + "="*50)
