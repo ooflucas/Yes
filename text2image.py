@@ -31,7 +31,6 @@ class ConvAutoencoder(nn.Module):
             nn.ConvTranspose2d(64, 32, 3, stride=2, padding=1, output_padding=1),
             nn.ReLU(),
             nn.ConvTranspose2d(32, 1, 3, stride=2, padding=1, output_padding=1),
-            nn.Sigmoid()
         )
 
     def reparameterize(self, mu, logvar):
@@ -77,7 +76,7 @@ def create_batch(batch_size=64, noise_level=1.0):
 # ============================================
 def vae_loss_fn(recon_x, x, mu, logvar, beta):
     # 使用 functional 版本的 BCE 比較不會有縮進問題
-    BCE = nn.functional.binary_cross_entropy(recon_x, x, reduction='sum')
+    BCE = nn.functional.binary_cross_entropy_with_logits(recon_x, x, reduction='sum')
     KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
     return BCE + beta * KLD
 
@@ -85,7 +84,7 @@ def vae_loss_fn(recon_x, x, mu, logvar, beta):
 # ============================================
 # 4. TRAINING FUNCTION
 # ============================================
-def train(model, device, epochs=5000, batch_size=128): # 3060Ti 轻松跑 128
+def train(model, device, epochs=5000, batch_size=128, noise_level=1.0): # 3060Ti 轻松跑 128
     optimizer = optim.AdamW(model.parameters(), lr=1e-3)
     # 使用新版 AMP 缩放器
     scaler = torch.amp.GradScaler('cuda') 
@@ -94,7 +93,7 @@ def train(model, device, epochs=5000, batch_size=128): # 3060Ti 轻松跑 128
     print(f"🚀 Training on {torch.cuda.get_device_name(0)} (8GB VRAM)")
 
     for epoch in range(epochs):
-        inputs, targets = create_batch(batch_size) # 假设你之前的 create_batch 函数还在
+        inputs, targets = create_batch(batch_size, noise_level) # 假设你之前的 create_batch 函数还在
         inputs, targets = inputs.to(device), targets.to(device)
 
         optimizer.zero_grad(set_to_none=True)
@@ -138,7 +137,8 @@ def visualize(model, device, num=6, noise_level=1):
         targets = targets.to(device)
         
         # Reconstruct
-        outputs, mu, logvar = model(inputs)
+        outputs_logits, mu, logvar = model(inputs)
+        outputs = torch.sigmoid(outputs_logits)
         
         # Move to CPU for display
         inputs = inputs.cpu()
