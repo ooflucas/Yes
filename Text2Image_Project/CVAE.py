@@ -3,22 +3,24 @@ import torch.nn as nn
 import torch.optim as optim
 import matplotlib.pyplot as plt
 import os
-
+import gc
+torch.cuda.empty_cache()
 # ============================================
-# 0. CONFIGURATION
+# 0. CONFIGURATION (Optimized for GTX 965M)
 # ============================================
 CONFIG = {
-    "latent_dim": 64, 
+    "latent_dim": 128,
     "num_classes": 2, 
-    "epochs": 1000,           # More epochs since we have more data
-    "batch_size": 64,         # Higher batch size stabilizes the "noisy" gradients
+    "epochs": 8000,
+    "batch_size": 16,         # Low to prevent CUBLAS_STATUS_ALLOC_FAILED
     "learning_rate": 1e-3, 
-    "beta": 0.01,             # Lowered for sharper edges
+    "beta": 0.001,            # Sharp edges but keeps VAE logic
     "noise_level": 2.0, 
     "device": "cuda" if torch.cuda.is_available() else "cpu"
 }
 script_dir = os.path.dirname(os.path.abspath(__file__))
 save_path = os.path.join(script_dir, "denoiser_model.pth")
+
 # ============================================
 # 1. MODEL
 # ============================================
@@ -42,9 +44,9 @@ class ConvAutoencoder(nn.Module):
         self.decoder = nn.Sequential(
             nn.ConvTranspose2d(128, 64, 7, stride=1, padding=0),
             nn.ReLU(),
-            nn.ConvTranspose2d(64, 32, 3, stride=2, padding=1, output_padding=1),
+            nn.ConvTranspose2d(64, 32, 4, stride=2, padding=1), # Kernel 4 for sharper alignment
             nn.ReLU(),
-            nn.ConvTranspose2d(32, 3, 3, stride=2, padding=1, output_padding=1),
+            nn.ConvTranspose2d(32, 3, 4, stride=2, padding=1),
             nn.Sigmoid()
         )
 
@@ -60,19 +62,24 @@ class ConvAutoencoder(nn.Module):
         logvar = self.fc_logvar(h)
         z = self.reparameterize(mu, logvar)
         
+        # Multiplier 10.0 for strong color signal
         one_hot = torch.nn.functional.one_hot(labels, num_classes=2).float() * 10.0
         z_cond = torch.cat([z, one_hot], dim=1)
         z_reshaped = self.fc_decode(z_cond).view(-1, 128, 1, 1)
         return self.decoder(z_reshaped).view(-1, 2352), mu, logvar
 
 # ============================================
-# 2. BALANCED DATA GENERATOR
+# 2. DATA GENERATOR (Returns Clean Targets)
 # ============================================
-def create_fixed_batch(label_list, noise_level=2.0):
-    inputs, targets, labels = [], [], []
+def create_clean_batch(label_list):
+    targets, labels = [], []
     for label in label_list:
         img = torch.zeros(3, 28, 28)
-        size = torch.randint(6, 12, (1,)).item()
+        
+        # --- NEW LOGIC: Randomized size for ANY color ---
+        # This allows for small blue, big red, and everything in between
+        size = torch.randint(6, 19, (1,)).item() 
+            
         half_size = size // 2 
         x_c = torch.randint(half_size, 28 - half_size, (1,)).item()
         y_c = torch.randint(half_size, 28 - half_size, (1,)).item()
@@ -80,60 +87,65 @@ def create_fixed_batch(label_list, noise_level=2.0):
         color_channel = 0 if label == 0 else 2 
         img[color_channel, y_c-half_size : y_c+half_size, x_c-half_size : x_c+half_size] = 1.0
         
-        noise = torch.randn(3, 28, 28) * noise_level
-        noisy = torch.clamp(img + noise, 0.0, 1.0)
-        
-        inputs.append(noisy.view(-1))
         targets.append(img.view(-1))
         labels.append(label)
-    return torch.stack(inputs), torch.stack(targets), torch.tensor(labels)
+    return torch.stack(targets), torch.tensor(labels)
+
 
 def vae_loss_fn(recon_x, x, mu, logvar):
     BCE = nn.functional.binary_cross_entropy(recon_x, x, reduction='sum')
     KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
-    return BCE + CONFIG["beta"] * KLD
+    return BCE + CONFIG["beta"] * KLD, BCE, KLD
 
 # ============================================
 # 3. TRAINING LOOP
 # ============================================
 def train(model, device):
     optimizer = optim.AdamW(model.parameters(), lr=CONFIG["learning_rate"])
-    scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=100, gamma=0.5)
-    # Lower this for a faster startup on laptop CPUs
-    print("🎨 Pre-generating 1000 images (Balanced Pool)...")
-    all_labels_list = ([0] * 500) + ([1] * 500) 
+    scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=800, gamma=0.5)
+
+    print("🎨 Generating 1000 Clean Squares...")
+    all_labels_list = torch.randint(0, 2, (250,)).tolist()
     
-    # This part happens on CPU and is the current "bottleneck"
-    p_in, p_targ, p_lab = create_fixed_batch(all_labels_list, CONFIG["noise_level"])
-    
-    # This moves it to your GTX 965M
-    p_in, p_targ, p_lab = p_in.to(device), p_targ.to(device), p_lab.to(device)
-    
+    torch.cuda.empty_cache()
     model.train()
-    print(f"🚀 GPU IS READY: {torch.cuda.get_device_name(0)}")
+    print(f"🚀 TRAINING ON: {torch.cuda.get_device_name(0)}")
 
     dataset_size = len(all_labels_list)
     for epoch in range(CONFIG["epochs"]):
+        p_targ, p_lab = create_clean_batch(all_labels_list) 
+        p_targ, p_lab = p_targ.to(device), p_lab.to(device)
+        running_loss, running_bce = 0.0, 0.0
+        
+        # ADD NOISE ON GPU EVERY EPOCH (Prevents "Potato" shapes)
+        noise = torch.randn_like(p_targ) * CONFIG["noise_level"]
+        p_in = torch.clamp(p_targ + noise, 0.0, 1.0)
+        
         indices = torch.randperm(dataset_size, device=device)
         
         for i in range(0, dataset_size, CONFIG["batch_size"]):
             batch_idx = indices[i : i + CONFIG["batch_size"]]
-            
-            inputs = p_in[batch_idx]
-            targets = p_targ[batch_idx]
-            labels = p_lab[batch_idx]
+            inputs, targets, labels = p_in[batch_idx], p_targ[batch_idx], p_lab[batch_idx]
 
             optimizer.zero_grad(set_to_none=True)
             output, mu, logvar = model(inputs, labels)
-            loss = vae_loss_fn(output, targets, mu, logvar)
+            loss, bce, kld = vae_loss_fn(output, targets, mu, logvar)
             loss.backward()
             optimizer.step()
+            
+            running_loss += loss.item()
+            running_bce += bce.item()
+
         scheduler.step()
-        
+        epoch_loss = running_loss / dataset_size
         if epoch % 50 == 0:
-            # This saves the model every 50 epochs automatically
-            torch.save(model.state_dict(), save_path)
-            print(f"💾 Checkpoint saved at epoch {epoch}")
+            avg_bce = running_bce / dataset_size
+            print(f"Epoch [{epoch:4d}/{CONFIG['epochs']}] | Loss: {epoch_loss:.4f} | LR: {optimizer.param_groups[0]['lr']:.6f} | BCE (Sharpness): {avg_bce:.4f}")
+            if epoch % 100 == 0:
+                torch.save(model.state_dict(), save_path)
+                torch.cuda.empty_cache()
+                gc.collect()
+
 # ============================================
 # 4. RUN & TEST
 # ============================================
@@ -143,16 +155,18 @@ if __name__ == "__main__":
     
     train(model, device)
     torch.save(model.state_dict(), save_path)
-    print("✅ Model saved successfully!")
-    # Final Stress Test with forced alternating colors
+    print("✅ Done! Plotting results...")
+
     model.eval()
     test_labels = [0, 1, 0, 1, 0, 1]
-    inputs, _, labels = create_fixed_batch(test_labels, noise_level=CONFIG["noise_level"])
-    inputs, labels = inputs.to(device), labels.to(device)
+    targets, labels = create_clean_batch(test_labels)
+    noise = torch.randn_like(targets) * CONFIG["noise_level"]
+    inputs = torch.clamp(targets + noise, 0.0, 1.0).to(device)
+    labels = labels.to(device)
 
     with torch.no_grad():
         outputs, _, _ = model(inputs, labels)
-        outputs = (outputs > 0.3).float() # Sharpness threshold
+        outputs = (outputs > 0.4).float() # Sharpness threshold
 
     fig, axes = plt.subplots(6, 2, figsize=(8, 14))
     for i in range(6):
@@ -165,3 +179,4 @@ if __name__ == "__main__":
 
     plt.tight_layout()
     plt.show()
+
