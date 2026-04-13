@@ -1,0 +1,445 @@
+pos = ['', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '' ,'', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '']
+row_avaliable = [1, 2, 3, 4, 5, 6, 7]
+x_move = []
+o_move = []
+rule = 
+def print_board():
+    print(f"  {row_avaliable[0]}  {row_avaliable[1]}  {row_avaliable[2]}  {row_avaliable[3]}  {row_avaliable[4]}  {row_avaliable[5]}  {row_avaliable[6]} ")
+    print(f"| {pos[0]} | {pos[1]} | {pos[2]} | {pos[3]} | {pos[4]} | {pos[5]} | {pos[6]} |")
+    print("-----------------------------")
+    print(f"| {pos[7]} | {pos[8]} | {pos[9]} | {pos[10]} | {pos[11]} | {pos[12]} | {pos[13]} |")
+    print("-----------------------------")
+    print(f"| {pos[14]} | {pos[15]} | {pos[16]} | {pos[17]} | {pos[18]} | {pos[19]} | {pos[20]} |")
+    print("-----------------------------")
+    print(f"| {pos[21]} | {pos[22]} | {pos[23]} | {pos[24]} | {pos[25]} | {pos[26]} | {pos[27]} |")
+    print("-----------------------------")
+    print(f"| {pos[28]} | {pos[29]} | {pos[30]} | {pos[31]} | {pos[32]} | {pos[33]} | {pos[34]} |")
+    print("-----------------------------")
+    print(f"| {pos[35]} | {pos[36]} | {pos[37]} | {pos[38]} | {pos[39]} | {pos[40]} | {pos[41]} |")
+    print("-----------------------------")
+print("welcome to connect 4")
+while True:
+    print_board()
+    print(x_move)
+    x_choice = input("player 1 choose a column (1-7): ")
+    if x_choice == '1':
+        if pos[35] == 'x' or pos[35] == 'o':
+            if pos[28] == 'x' or pos[28] == 'o':
+                if pos[21] == 'x' or pos[21] == 'o':
+                    if pos[14] == 'x' or pos[14] == 'o':
+                        if pos[7] == 'x' or pos[7]== 'o':
+                            if pos[0] == 'x' or pos[0] == 'o':
+                                input('column full!')
+                                continue
+                            else:
+                                pos[0] = 'x'
+                                x_move.append(0)
+                        else:
+                            pos[7] = 'x'
+                            x_move.append(7)
+                    else:
+                        pos[14] = 'x'
+                        x_move.append(14)
+                else:
+                    pos[21] = 'x'
+                    x_move.append(21)
+            else:
+                pos[28] = 'x'
+                x_move.append(28)
+        else:
+            pos[35] = 'x'
+            x_move.append(35)
+    elif x_choice == '2':
+        if pos[36] == 'x' or pos[36] == 'o':
+            if pos[29] == 'x' or pos[36] == 'o':
+                if pos[22] == 'x' or pos[22] == 'o':
+                    if pos[15] == 'x' or pos[15] == 'o':
+                        if pos[8] == 'x' or pos[8] == 'o':
+                            if pos[1] == 'x' or pos[1] == 'o':
+                                input("column full!")
+                                continue
+                            else:
+                                pos[1] = 'x'
+                                x_move.append(1)
+                        else:
+                            pos[8] = 'x'
+                            x_move.append(8)
+                    else:
+                        pos[15] = 'x'
+                        x_move.append(15)
+                else:
+                    pos[22] = 'x'
+                    x_move.append(22)
+            else:
+                pos[29] = 'x'
+                x_move.append(29)
+        else:
+            pos[36] = 'x'
+            x_move.append(36)
+    elif x_choice == '3':
+        if pos[37] == 'x' or pos[37] == 'o':
+            if pos[30] == 'x' or pos[30] == 'o':
+                if pos[23] == 'x' or pos[23] == 'o':
+                    if pos[16] == 'x' or pos[16] == 'o':
+                        if pos[9] == 'x' or pos[9] == 'o':
+                            if pos[2] == 'x' or pos[2] == 'o':
+                                input("column full!")
+                                continue
+                            else:
+                                pos[2] = 'x'
+                                x_move.append(2)
+                        else:
+                            pos[9] = 'x'
+                            x_move.append(9)
+                    else:
+                        pos[16] = 'x'
+                        x_move.append(16)
+                else:
+                    pos[23] = 'x'
+                    x_move.append(23)
+            else:
+                pos[30] = 'x'
+                x_move.append(30)
+        else:
+            pos[37] = 'x'
+            x_move.append(37)
+    elif x_choice == '4':
+        if pos[38] == 'x' or pos[38] == 'o':
+            if pos[31] == 'x' or pos[31] == 'o':
+                if pos[24] == 'x' or pos[24] == 'o':
+                    if pos[17] == 'x' or pos[17] == 'o':
+                        if pos[10] == 'x' or pos[10] == 'o':
+                            if pos[3] == 'x' or pos[3] == 'o':
+                                input("column full!")
+                                continue
+                            else:
+                                pos[3] = 'x'
+                                x_move.append(3)
+                        else:
+                            pos[10] = 'x'
+                            x_move.append(10)
+                    else:
+                        pos[17] = 'x'
+                        x_move.append(17)
+                else:
+                    pos[24] = 'x'
+                    x_move.append(24)
+            else:
+                pos[31] = 'x'
+                x_move.append(31)
+        else:
+            pos[38] = 'x'
+            x_move.append(38)
+    elif x_choice == '5':
+        if pos[39] == 'x' or pos[39] == 'o':
+            if pos[32] == 'x' or pos[32] == 'o':
+                if pos[25] == 'x' or pos[25] == 'o':
+                    if pos[18] == 'x' or pos[18] == 'o':
+                        if pos[11] == 'x' or pos[11] == 'o':
+                            if pos[4] == 'x' or pos[4] == 'o':
+                                input("column full!")
+                                continue
+                            else:
+                                pos[4] = 'x'
+                                x_move.append(4)
+                        else:
+                            pos[11] = 'x'
+                            x_move.append(11)
+                    else:
+                        pos[18] = 'x'
+                        x_move.append(18)
+                else:
+                    pos[25] = 'x'
+                    x_move.append(25)
+            else:
+                pos[32] = 'x'
+                x_move.append(32)
+        else:
+            pos[39] = 'x'
+            x_move.append(39)
+    elif x_choice == '6':
+        if pos[40] == 'x' or pos[40] == 'o':
+            if pos[33] == 'x' or pos[33] == 'o':
+                if pos[26] == 'x' or pos[26] == 'o':
+                    if pos[19] == 'x' or pos[19] == 'o':
+                        if pos[12] == 'x' or pos[12] == 'o':
+                            if pos[5] == 'x' or pos[5] == 'o':
+                                input("column full!")
+                                continue
+                            else:
+                                pos[5] = 'x'
+                                x_move.append(5)
+                        else:
+                            pos[12] = 'x'
+                            x_move.append(12)
+                    else:
+                        pos[19] = 'x'
+                        x_move.append(19)
+                else:
+                    pos[26] = 'x'
+                    x_move.append(26)
+            else:
+                pos[33] = 'x'
+                x_move.append(33)
+        else:
+            pos[40] = 'x'
+            x_move.append(40)
+    elif x_choice == '7':
+        if pos[41] == 'x' or pos[41] == 'o':
+            if pos[34] == 'x' or pos[34] == 'o':
+                if pos[27] == 'x' or pos[27] == 'o':
+                    if pos[20] == 'x' or pos[20] == 'o':
+                        if pos[13] == 'x' or pos[13] == 'o':
+                            if pos[6] == 'x' or pos[6] == 'o':
+                                input("column full!")
+                                continue
+                            else:
+                                pos[6] = 'x'
+                                x_move.append(6)
+                        else:
+                            pos[13] = 'x'
+                            x_move.append(13)
+                    else:
+                        pos[20] = 'x'
+                        x_move.append(20)
+                else:
+                    pos[27] = 'x'
+                    x_move.append(27)
+            else:
+                pos[34] = 'x'
+                x_move.append(34)
+        else:
+            pos[41] = 'x'
+            x_move.append(41)
+        
+        
+        
+        
+        
+    print_board()
+    print(o_move)
+    x_choice = input("player 2 choose a column (1-7): ")
+    if o_choice == '1':
+        if pos[35] == 'x' or pos[35] == 'o':
+            if pos[28] == 'x' or pos[28] == 'o':
+                if pos[21] == 'x' or pos[21] == 'o':
+                    if pos[14] == 'x' or pos[14] == 'o':
+                        if pos[7] == 'x' or pos[7]== 'o':
+                            if pos[0] == 'x' or pos[0] == 'o':
+                                input('column full!')
+                                continue
+                            else:
+                                pos[0] = 'o'
+                                o_move.append(0)
+                        else:
+                            pos[7] = 'o'
+                            o_move.append(7)
+                    else:
+                        pos[14] = 'o'
+                        o_move.append(14)
+                else:
+                    pos[21] = 'o'
+                    o_move.append(21)
+            else:
+                pos[28] = 'o'
+                o_move.append(28)
+        else:
+            pos[35] = 'o'
+            o_move.append(35)
+    elif o_choice == '2':
+        if pos[36] == 'x' or pos[36] == 'o':
+            if pos[29] == 'x' or pos[36] == 'o':
+                if pos[22] == 'x' or pos[22] == 'o':
+                    if pos[15] == 'x' or pos[15] == 'o':
+                        if pos[8] == 'x' or pos[8] == 'o':
+                            if pos[1] == 'x' or pos[1] == 'o':
+                                input("column full!")
+                                continue
+                            else:
+                                pos[1] = 'o'
+                                o_move.append(1)
+                        else:
+                            pos[8] = 'o'
+                            o_move.append(8)
+                    else:
+                        pos[15] = 'x'
+                        x_move.append(15)
+                else:
+                    pos[22] = 'x'
+                    x_move.append(22)
+            else:
+                pos[29] = 'x'
+                x_move.append(29)
+        else:
+            pos[36] = 'x'
+            x_move.append(36)
+    elif x_choice == '3':
+        if pos[37] == 'x' or pos[37] == 'o':
+            if pos[30] == 'x' or pos[30] == 'o':
+                if pos[23] == 'x' or pos[23] == 'o':
+                    if pos[16] == 'x' or pos[16] == 'o':
+                        if pos[9] == 'x' or pos[9] == 'o':
+                            if pos[2] == 'x' or pos[2] == 'o':
+                                input("column full!")
+                                continue
+                            else:
+                                pos[2] = 'x'
+                                x_move.append(2)
+                        else:
+                            pos[9] = 'x'
+                            x_move.append(9)
+                    else:
+                        pos[16] = 'x'
+                        x_move.append(16)
+                else:
+                    pos[23] = 'x'
+                    x_move.append(23)
+            else:
+                pos[30] = 'x'
+                x_move.append(30)
+        else:
+            pos[37] = 'x'
+            x_move.append(37)
+    elif x_choice == '4':
+        if pos[38] == 'x' or pos[38] == 'o':
+            if pos[31] == 'x' or pos[31] == 'o':
+                if pos[24] == 'x' or pos[24] == 'o':
+                    if pos[17] == 'x' or pos[17] == 'o':
+                        if pos[10] == 'x' or pos[10] == 'o':
+                            if pos[3] == 'x' or pos[3] == 'o':
+                                input("column full!")
+                                continue
+                            else:
+                                pos[3] = 'x'
+                                x_move.append(3)
+                        else:
+                            pos[10] = 'x'
+                            x_move.append(10)
+                    else:
+                        pos[17] = 'x'
+                        x_move.append(17)
+                else:
+                    pos[24] = 'x'
+                    x_move.append(24)
+            else:
+                pos[31] = 'x'
+                x_move.append(31)
+        else:
+            pos[38] = 'x'
+            x_move.append(38)
+    elif x_choice == '5':
+        if pos[39] == 'x' or pos[39] == 'o':
+            if pos[32] == 'x' or pos[32] == 'o':
+                if pos[25] == 'x' or pos[25] == 'o':
+                    if pos[18] == 'x' or pos[18] == 'o':
+                        if pos[11] == 'x' or pos[11] == 'o':
+                            if pos[4] == 'x' or pos[4] == 'o':
+                                input("column full!")
+                                continue
+                            else:
+                                pos[4] = 'x'
+                                x_move.append(4)
+                        else:
+                            pos[11] = 'x'
+                            x_move.append(11)
+                    else:
+                        pos[18] = 'x'
+                        x_move.append(18)
+                else:
+                    pos[25] = 'x'
+                    x_move.append(25)
+            else:
+                pos[32] = 'x'
+                x_move.append(32)
+        else:
+            pos[39] = 'x'
+            x_move.append(39)
+    elif x_choice == '6':
+        if pos[40] == 'x' or pos[40] == 'o':
+            if pos[33] == 'x' or pos[33] == 'o':
+                if pos[26] == 'x' or pos[26] == 'o':
+                    if pos[19] == 'x' or pos[19] == 'o':
+                        if pos[12] == 'x' or pos[12] == 'o':
+                            if pos[5] == 'x' or pos[5] == 'o':
+                                input("column full!")
+                                continue
+                            else:
+                                pos[5] = 'x'
+                                x_move.append(5)
+                        else:
+                            pos[12] = 'x'
+                            x_move.append(12)
+                    else:
+                        pos[19] = 'x'
+                        x_move.append(19)
+                else:
+                    pos[26] = 'x'
+                    x_move.append(26)
+            else:
+                pos[33] = 'x'
+                x_move.append(33)
+        else:
+            pos[40] = 'x'
+            x_move.append(40)
+    elif x_choice == '7':
+        if pos[41] == 'x' or pos[41] == 'o':
+            if pos[34] == 'x' or pos[34] == 'o':
+                if pos[27] == 'x' or pos[27] == 'o':
+                    if pos[20] == 'x' or pos[20] == 'o':
+                        if pos[13] == 'x' or pos[13] == 'o':
+                            if pos[6] == 'x' or pos[6] == 'o':
+                                input("column full!")
+                                continue
+                            else:
+                                pos[6] = 'x'
+                                x_move.append(6)
+                        else:
+                            pos[13] = 'x'
+                            x_move.append(13)
+                    else:
+                        pos[20] = 'x'
+                        x_move.append(20)
+                else:
+                    pos[27] = 'x'
+                    x_move.append(27)
+            else:
+                pos[34] = 'x'
+                x_move.append(34)
+        else:
+            pos[41] = 'x'
+            x_move.append(41)
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
