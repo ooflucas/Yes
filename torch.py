@@ -4,7 +4,7 @@ que = [10.5, 2.72, 30.92]
 class Model(nn.Module):
     def __init__(self):
         super().__init__()
-        self.layer = nn.Linear(1, 1)
+        self.layer = nn.Linear(2, 1)
     def forward(self, x):
     	return self.layer(x)
 X = torch.tensor([[1.0, 3.0], [2.0, 5.0], [3.0, 1.0]], dtype=torch.float32)
