@@ -1,0 +1,4 @@
+LDI r1 250
+LDI r2 300
+CMP r1 r2
+DEC r1
